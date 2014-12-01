@@ -10,11 +10,14 @@ class Client {
 	public function __construct($endpoint, $apiKey, $secretKey) {
 	    // API endpoint
 	    if (empty($endpoint)) {
-	        throw new Exception(Exception::ENDPOINT_EMPTY);
+	        throw new Exception("No endpoint provided.");
 	    }
 	    
 	    if (!preg_match("|^https*://.*$|", $endpoint)) {
-	        throw new Exception(Exception::ENDPOINT_NOT_URL, $endpoint);
+	        throw new Exception(
+                "The endpoint must be a URL (starting by http://): "
+                . json_encode($endpoint)
+            );
 	    }
 	    
 	    // $endpoint does not ends with a "/"
@@ -22,20 +25,20 @@ class Client {
 	    
 	    // API key
 	    if (empty($apiKey)) {
-	        throw new Exception(Exception::APIKEY_EMPTY);
+	        throw new Exception("No API key provided.");
 	    }
 		$this->apiKey = $apiKey;
 		
 		// API secret
 		if (empty($secretKey)) {
-		    throw new Exception(Exception::SECRETKEY_EMPTY);
+		    throw new Exception("No secret key provided.");
 		}
 		$this->secretKey = $secretKey;
 	}
 	
     public function getSignature($queryString) {
         if (empty($queryString)) {
-            throw new Exception(Exception::STRTOSIGN_EMPTY);
+            throw new Exception("String to sign empty.");
         }
         
         $hash = @hash_hmac("SHA1", $queryString, $this->secretKey, true);
@@ -45,11 +48,14 @@ class Client {
 
     public function request($command, $args = array()) {
         if (empty($command)) {
-            throw new Exception(Exception::NO_COMMAND);
+            throw new Exception("No command given for the request.");
         }
         
         if (!is_array($args)) {
-            throw new Exception(Exception::WRONG_REQUEST_ARGS, $args);
+            throw new Exception(
+                "Arguments for the request must be in an array. Given: "
+                . json_encode($args)
+            );
         }
         
         foreach ($args as $key => $value) {
@@ -78,20 +84,20 @@ class Client {
         \curl_close($curl);
         
         if (empty($data)) {
-            throw new Exception(Exception::NO_DATA_RECEIVED);
+            throw new Exception("No data received");
         }
         $result = @json_decode($data);
         if (empty($result)) {
-            throw new Exception(Exception::NO_VALID_JSON_RECEIVED);
+            throw new Exception("The server did not issue a json response.");
         }
         
         $propertyResponse = strtolower($command) . "response";
         
         if (!property_exists($result, $propertyResponse)) {
             if (property_exists($result, "errorresponse") && property_exists($result->errorresponse, "errortext")) {
-                throw new \Exception($result->errorresponse->errortext);
+                throw new Exception($result->errorresponse->errortext);
             } else {
-                throw new \Exception(sprintf("Unable to parse the response. Got code %d and message: %s", $code, $data['body']));
+                throw new Exception(sprintf("Unable to parse the response. Got code %d and message: %s", $code, $data['body']));
             }
         }
         
