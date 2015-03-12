@@ -6,6 +6,7 @@ class Client {
     public $apiKey;
     public $secretKey;
     public $endpoint; // Does not ends with a "/"
+    private $assoc = false;
 	
 	public function __construct($endpoint, $apiKey, $secretKey) {
 	    // API endpoint
@@ -35,6 +36,14 @@ class Client {
 		}
 		$this->secretKey = $secretKey;
 	}
+
+    public function setAssoc($v) {
+        $this->assoc = $v;
+    }
+	
+    public function getAssoc() {
+        return $this->assoc;
+    }
 	
     public function getSignature($queryString) {
         if (empty($queryString)) {
@@ -125,7 +134,9 @@ class Client {
                 }
             }
         }
-        
+        if ($this->assoc) {
+            $response = json_decode(json_encode($response), true);
+        }
         return $response;
     }
 }
